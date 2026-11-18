@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "author": "SmartDevice",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": -19.2, "left": 81.64, "attrs": {} },
+    {
+      "type": "wokwi-pir-motion-sensor",
+      "id": "pir1",
+      "top": 175.08,
+      "left": -293.1,
+      "rotate": 270,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht1",
+      "top": -43.2,
+      "left": -267.3,
+      "rotate": 270,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr1",
+      "top": 89.6,
+      "left": -344.8,
+      "attrs": {}
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "esp:5V", "pir1:VCC", "red", [ "v48", "h-287.85" ] ],
+    [ "esp:3V3", "dht1:VCC", "red", [ "h-220.65", "v19.2" ] ],
+    [ "esp:GND.2", "dht1:GND", "black", [ "h19.2", "v-67.2", "h-345.6", "v57.6" ] ],
+    [ "esp:4", "dht1:SDA", "green", [ "h48", "v-201.6", "h-393.6", "v96.1" ] ],
+    [ "esp:3V3", "ldr1:VCC", "red", [ "h-28.65", "h-192", "v96" ] ],
+    [ "esp:GND.3", "ldr1:GND", "black", [ "h19.2", "v-48", "h-326.4", "v96.4" ] ],
+    [ "ldr1:AO", "esp:34", "green", [ "h67.2", "v-87.1" ] ],
+    [ "pir1:OUT", "esp:27", "green", [ "h134.4", "v-115.06" ] ],
+    [ "pir1:GND", "esp:GND.1", "black", [ "h259.2", "v-76.54" ] ]
+  ],
+  "dependencies": {}
+}
