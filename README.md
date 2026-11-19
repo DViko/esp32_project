@@ -1,118 +1,251 @@
-# ESP32 Smart Device
+# 📝 ESP32 Project
 
-An ESP32 project that monitors temperature, humidity, light, and motion. It
-records detected events in a bounded in-memory log and provides a serial
-command to search that log.
+A sensor-based smart device simulation built with ESP32, C++17, and Arduino Framework.
 
-## Requirements
+The project demonstrates concurrent programming, sensor monitoring, event logging, thread synchronization, and command-based event searching.
 
-- Linux Mint
-- Visual Studio Code
-- The **PlatformIO IDE** extension for VS Code
-- An ESP32 DevKit board (the project is configured for `esp32dev`)
-- USB data cable and the required sensors, if running on physical hardware
+The application runs in the Wokwi ESP32 simulator and uses two independent threads to handle sensor monitoring and user commands.
 
-PlatformIO installs the ESP32 toolchain, Arduino framework, and libraries
-listed in `platformio.ini` the first time the project is built.
 
-## Open and build
+## 📝 Live Simulation
 
-1. Install Visual Studio Code and add the **PlatformIO IDE** extension.
-2. Clone or download this repository.
-3. In VS Code, choose **File → Open Folder...** and select the project folder
-   (the folder containing `platformio.ini`).
-4. Wait for PlatformIO to initialize the project and install its dependencies.
-5. In the PlatformIO toolbar, select the `esp32dev` environment and click
-   **Build**. The first build may take a few minutes.
+The project is available as an interactive simulation on Wokwi.
 
-You can also open the PlatformIO home icon and use **Open Project** to select
-the same folder.
+**[Open ESP32_Project in Wokwi](https://wokwi.com/projects/481024215761310721)**
 
-## Run on an ESP32 board
+You can start the simulation, interact with the virtual sensors, and test the application's functionality through the Serial Monitor.
 
-1. Connect the ESP32 over USB.
-2. On Linux Mint, ensure your user can access serial devices. Add your user to
-   the `dialout` group if needed, then log out and back in:
+No local installation is required to try the online simulation.
 
-   ```bash
-   sudo usermod -a -G dialout "$USER"
-   ```
 
-3. In PlatformIO, click **Upload**. If the board is not detected, select its
-   serial port from the PlatformIO device/port controls. Some boards require
-   holding the **BOOT** button while upload begins.
-4. Open **Monitor** in PlatformIO. The serial monitor baud rate is **115200**.
+## 📝 Features
 
-## Sensor connections
+- **Sensor monitoring:** Reads data from a DHT22 temperature and humidity sensor, a PIR motion sensor, and a photoresistor.
+- **Multithreading:** Uses std::thread to run sensor monitoring and command processing concurrently.
+- **Thread synchronization:** Uses std::mutex to protect shared event data and serial output.
+- **Event logging:** Stores detected events in a thread-safe event log.
+- **FIFO storage:** Keeps up to 100 events. The oldest event is removed when the log reaches its capacity.
+- **Event searching:** Supports filtering by event type and severity level.
+- **Event prioritization:** Search results are sorted by severity: HIGH, MEDIUM, then LOW.
+- **Input validation:** Checks user commands before processing them.
 
-The pin assignments are in `include/config.hpp` and the wiring diagram is in
-`diagram.json`.
 
-| Sensor | ESP32 connection |
-| --- | --- |
-| DHT22 data | GPIO 4 |
-| PIR output | GPIO 27 |
-| Photoresistor analog output | GPIO 34 |
-| Sensor power and ground | As shown in `diagram.json` |
+## 📝 Requirements
 
-Use the wiring diagram as the source of truth for power and ground connections.
-Check the sensor and board specifications before wiring physical hardware.
+The project was developed and tested on Linux Mint (Ubuntu-based).
 
-## Wokwi project
+🔸 Required software:
 
-For an online simulation, open the project in Wokwi and start the simulation.
-Add the public Wokwi project URL to this repository description or replace
-this section with a direct link once the project is published:
+  - Visual Studio Code.
+  - PlatformIO IDE extension for VS Code.
+  - Wokwi Simulator extension for VS Code.
 
-```text
-https://wokwi.com/projects/<PROJECT_ID>
-```
+PlatformIO automatically installs the required ESP32 platform and library dependencies during the first build.
 
-## Serial command
 
-Enter a command in the serial monitor:
+## 📝 Technologies
 
-```text
-SEARCH <TYPE> <LEVEL>
-```
+  - C++17
+  - ESP32
+  - Arduino Framework
+  - PlatformIO
+  - Wokwi
+  - C++ Standard Library: std::thread, std::mutex, std::vector
 
-Supported event types: `TEMPERATURE`, `MOTION`, `LIGHT`.
 
-Supported levels: `HIGH`, `MEDIUM`, `LOW`.
+## 📝 Hardware
 
-Use `*` as a wildcard for either filter, for example:
+🔸 The project uses the following components and connections in the Wokwi simulation:
 
-```text
-SEARCH * *
-SEARCH TEMPERATURE HIGH
-SEARCH * LOW
-```
+### Components
 
-The event log keeps up to 100 events in memory. It is cleared when the board
-restarts.
+| Component           | Purpose                             |
+| :------------------ | :---------------------------------- |
+| ESP32 DevKit        | Main controller                     |
+| DHT22               | Temperature and humidity monitoring |
+| PIR Motion Sensor   | Motion detection                    |
+| Photoresistor (LDR) | Light level monitoring              |
 
-## Run the native EventLogger tests
 
-The native test only needs a C++17 compiler. On Linux Mint, install one if
-necessary:
+### GPIO Connections
 
-```bash
-sudo apt update
-sudo apt install build-essential
-```
+| Component | ESP32 GPIO |
+| :-------- | :--------- |
+| PIR OUT   | GPIO 27    |
+| DHT22 SDA | GPIO 4     |
+| LDR AO    | GPIO 34    |
 
-From the project directory, compile and run the test:
+Power connections are configured in diagram.json.
 
-```bash
-g++ -std=c++17 -Iinclude src/event_logger.cpp src/native_test.cpp \
-    -o /tmp/esp32-smart-device-test
-/tmp/esp32-smart-device-test
-```
 
-## Project layout
+## 📝 Application Architecture
 
-- `include/` — configuration, event, logger, and sensor interfaces
-- `src/` — firmware implementation and native test entry point
-- `test/` — EventLogger test cases
-- `diagram.json` — Wokwi wiring diagram
-- `platformio.ini` — ESP32 and native PlatformIO environments
+The application consists of two concurrent threads.
+
+### Sensor Thread
+
+The sensor thread periodically reads sensor data every 2 seconds.
+
+🔸 It detects state changes and registers events when the following conditions occur:
+
+
+| Event Type  | Condition                       | Severity |
+| :---------- | :------------------------------ | :------- |
+| TEMPERATURE | Temperature exceeds 30 °C       | HIGH     |
+| MOTION      | Motion is detected              | MEDIUM   |
+| LIGHT       | Ambient light level becomes low | LOW      |
+
+
+Events are registered only when a monitored condition changes from inactive to active. This prevents the same event from being repeatedly added while the condition remains active.
+
+
+### Command Thread
+
+The command thread listens for commands through the Serial Monitor. It validates user input, searches the event log, and displays matching results.
+
+**EventLogger** manages the event storage and search operations.
+
+🔸 Its main responsibilities are:
+
+- Thread-safe event insertion.
+- FIFO event storage with a maximum capacity of 100 entries.
+- Event filtering by type and severity.
+- Sorting search results by severity.
+- Preserving the newest-first order among events with equal severity.
+
+The event log is protected by an internal mutex. Search operations scan the event log while holding the mutex. Matching events are copied to a result vector, and sorting happens after the mutex is released.
+
+
+## 📝 Installation and Setup
+
+
+### Clone the Repository
+
+🔸 Open a terminal and run:
+
+- > git clone https://github.com/DViko/esp32_project.git
+
+🔸 Navigate to the project directory:
+
+- > cd esp32_project
+
+🔸 Open the project in Visual Studio Code:
+
+- > code .
+
+If you want to use this project as a starting point for your own repository, replace the repository URL with your own GitHub repository address.
+
+
+### Install VS Code Extensions
+
+🔸 Install the following extensions from the VS Code Marketplace:
+
+- PlatformIO IDE
+- Wokwi Simulator
+
+PlatformIO manages the project dependencies and build environments. Wokwi provides the ESP32 simulation environment.
+
+
+### Build the ESP32 Firmware
+
+🔸 Open the PlatformIO: New Terminal in VS Code and run:
+  - > pio run -e esp32dev
+
+PlatformIO will download the required dependencies, compile the source files, and generate the firmware.
+
+🔸 The firmware files are generated in:
+  - > .pio/build/esp32dev/
+
+
+### Start the Wokwi Simulation
+
+🔸 After a successful build:
+
+  - Open the project in VS Code.
+  - Open the Command Palette with Ctrl + Shift + P.
+  - Select Wokwi: Start Simulator.
+  - Wait for the ESP32 simulation to start.
+  - Open the Serial Monitor to interact with the application.
+
+The simulation configuration is stored in wokwi.toml, while the hardware connections are defined in diagram.json.
+
+The Serial Monitor uses a baud rate of **115200**.
+
+
+## 📝 Serial Commands
+
+🔸 The application accepts commands using the following format:
+
+  - > SEARCH <TYPE> <LEVEL>
+
+🔸 Available Event Types:
+
+  - TEMPERATURE
+  - MOTION
+  - LIGHT
+
+🔸 Available Severity Levels:
+
+  - HIGH
+  - MEDIUM
+  - LOW
+
+The wildcard character * can be used to match any event type or severity level.
+
+
+### Examples
+
+🔸 Search for high-temperature events:
+
+  - > SEARCH TEMPERATURE HIGH
+
+🔸 Search for motion events:
+
+  - > SEARCH MOTION MEDIUM
+
+🔸 Search for low-light events:
+
+  - > SEARCH LIGHT LOW
+
+🔸 Display all events:
+
+  - > SEARCH * *
+
+Commands are case-insensitive.
+
+The application displays a maximum of 10 matching results per search.
+
+Results are ordered by severity (HIGH → MEDIUM → LOW). Events with the same severity are displayed from newest to oldest.
+
+
+## 📝 Native Unit Tests
+
+The project includes a separate Native build environment for testing the EventLogger class on the host machine.
+
+These tests do not require an ESP32 board or the Wokwi simulator.
+
+🔸 To build and execute the tests, open the PlatformIO terminal and run:
+
+  - > pio run -e native -t exec
+
+The Native environment compiles the event logger and a standalone test executable.
+
+🔸 The current test suite verifies:
+
+  - Searching an empty event log.
+  - Preserving exactly 100 events without removing any entries.
+  - Enforcing the maximum event storage capacity of 100 events.
+  - Removing the oldest events when the capacity is exceeded, preserving the newest entries.
+  - Filtering events by type.
+  - Sorting search results by severity priority (HIGH, MEDIUM, LOW), with newer events appearing first within each priority level.
+
+
+## 📝 Project Status
+
+The project has been successfully built and tested in the Wokwi ESP32 simulator.
+
+Sensor monitoring, event registration, concurrent execution, command processing, event searching, sorting, and FIFO storage have been verified.
+
+The Native unit test suite for EventLogger passes all tests, including FIFO capacity, event filtering, and priority sorting.
+
+---
